@@ -608,6 +608,8 @@ void snd_avb_receive(struct igb_adapter *adapter)
      u32 *caddr = 0;
      u32 *paddr = 0;
 
+     mb();
+
      if (csubs)
      {
         if (csubs->runtime)
@@ -617,6 +619,8 @@ void snd_avb_receive(struct igb_adapter *adapter)
         }
      }
 
+     mb();
+
      if (psubs)
      {
         if (psubs->runtime)
@@ -625,6 +629,8 @@ void snd_avb_receive(struct igb_adapter *adapter)
               paddr = ((u32 *)psubs->runtime->dma_area) + oldpptr;  // 4 bytes per sample
         }
      }
+
+     mb();
 
 //     kernel_fpu_begin(); // possibly later use SSE/AVX optimised convertion here
 
@@ -700,7 +706,7 @@ void snd_avb_receive(struct igb_adapter *adapter)
                         (adapter->capture_buffer_size * adapter->capture_channels);
             adapter->hw_capture_pointer = newcptr;
          }
-
+mb();
          if (1)
          {
             u64 paylen = (50+channels*samples_per_packet*4);
@@ -723,6 +729,8 @@ void snd_avb_receive(struct igb_adapter *adapter)
             pavpdu->sequence_number = cavpdu->sequence_number;
             pavpdu->data_block_continuity = cavpdu->data_block_continuity;
 
+	    mb();
+
             for (j=0; j<count1*adapter->playback_channels; j++)
             {
                 if (likely(playback))
@@ -737,7 +745,7 @@ void snd_avb_receive(struct igb_adapter *adapter)
 
                 pavpdu->audio_data[j] = htonl(data);
             }
-
+mb();
             if (count2)
             {
                paddr = (u32 *)psubs->runtime->dma_area;
@@ -757,7 +765,7 @@ void snd_avb_receive(struct igb_adapter *adapter)
                    pavpdu->audio_data[j+count1*adapter->playback_channels] = htonl(data);
                }
             }
-
+mb();
             // fill context descriptor
 
             tx_desc[tmp % (MAXDESCRIPTORS >> 1)].launch_time = launch_time;
@@ -773,7 +781,7 @@ void snd_avb_receive(struct igb_adapter *adapter)
                                  E1000_ADVTXD_DCMD_IFCS | 
                                  E1000_ADVTXD_DCMD_DEXT | 
                                  paylen;
-            
+     mb();       
             if (playback)
             {            
                p_cnt += samples_per_packet;
@@ -781,7 +789,7 @@ void snd_avb_receive(struct igb_adapter *adapter)
                            (adapter->playback_buffer_size * adapter->playback_channels);
                adapter->hw_playback_pointer = newpptr;
             }
-
+mb();
          }
 
          if (unlikely(!i++))
@@ -805,7 +813,7 @@ void snd_avb_receive(struct igb_adapter *adapter)
      {
         adapter->c_cnt = c_cnt;
      }
-
+mb();
      if (playback && p_cnt >= adapter->playback_period_size)
      {
         adapter->p_cnt = p_cnt - adapter->playback_period_size;
@@ -815,7 +823,7 @@ void snd_avb_receive(struct igb_adapter *adapter)
      {
         adapter->p_cnt = p_cnt;
      }
-
+mb();
      if (adapter->rx_ring[1]->next_to_clean != tmp)
      {
         adapter->rx_ring[1]->next_to_clean = tmp;
@@ -824,6 +832,6 @@ void snd_avb_receive(struct igb_adapter *adapter)
 	writel((tmp) % MAXDESCRIPTORS, adapter->rx_ring[1]->tail);
 	writel(((tmp) << 1) % MAXDESCRIPTORS, adapter->tx_ring[0]->tail);
      }
-
+mb();
 }
 
