@@ -243,7 +243,7 @@ void fill_jdksavdecc_descriptor_entity()
    entity.controller_capabilities = 0;
    entity.available_index = 0;
    jdksavdecc_eui64_init_from_uint64(&entity.association_id, 0);
-   jdksavdecc_string_set_from_cstr(&entity.entity_name, "AVB");
+   jdksavdecc_string_set_from_cstr(&entity.entity_name, "avb4linux");
    entity.vendor_name_string = 0;
    entity.model_name_string = 1;
    jdksavdecc_string_set_from_cstr(&entity.firmware_version, "1.0.0");
